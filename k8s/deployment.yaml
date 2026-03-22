@@ -1,0 +1,25 @@
+
+---
+
+## ✅ `k8s/deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telco-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: telco
+  template:
+    metadata:
+      labels:
+        app: telco
+    spec:
+      containers:
+      - name: telco-container
+        image: telco-devops
+        ports:
+        - containerPort: 8000
