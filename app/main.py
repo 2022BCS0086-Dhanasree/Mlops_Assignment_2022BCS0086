@@ -1,9 +1,12 @@
 from fastapi import FastAPI
 import pandas as pd
-from app.rules import calculate_risk
+import joblib
 from app.logger import logger
 
 app = FastAPI()
+
+# Load model
+model = joblib.load("ml/model.pkl")
 
 # Load dataset
 customers = pd.read_csv("app/data/telco.csv")
@@ -34,13 +37,26 @@ def predict(customer_id: str):
     try:
         customer = customers[customers["customerID"] == customer_id].iloc[0]
 
-        ticket = {
-            "tickets_last_30_days": customer["tickets_last_30_days"],
-            "complaint_flag": customer["complaint_flag"],
-            "charge_increase": customer["charge_increase"]
+        # ✅ Contract Encoding
+        contract_map = {
+            "Month-to-month": 0,
+            "One year": 1,
+            "Two year": 2
         }
 
-        risk = calculate_risk(customer, ticket)
+        contract_encoded = contract_map.get(customer["Contract"], 0)
+
+        # ✅ Feature vector
+        features = [
+            customer["tickets_last_30_days"],
+            customer["complaint_flag"],
+            customer["charge_increase"],
+            contract_encoded
+        ]
+
+        # ✅ Prediction
+        prediction = model.predict([features])[0]
+        risk = "HIGH" if prediction == 1 else "LOW"
 
         logger.info(
             f"Dhanasree Gidijala | 2022BCS0086 | {customer_id} → {risk}"
@@ -53,5 +69,6 @@ def predict(customer_id: str):
             "roll_no": "2022BCS0086"
         }
 
-    except:
+    except Exception as e:
+        logger.error(str(e))
         return {"error": "Customer not found"}

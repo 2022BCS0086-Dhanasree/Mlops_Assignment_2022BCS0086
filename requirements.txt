@@ -3,3 +3,6 @@ uvicorn
 pandas
 pydantic
 pytest
+
+scikit-learn
+joblib
