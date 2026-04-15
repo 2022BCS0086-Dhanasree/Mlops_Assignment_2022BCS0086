@@ -34,8 +34,19 @@ def home():
 
 @app.post("/predict-risk")
 def predict(customer_id: str):
+    print("INPUT ID:", customer_id)
+
+    print("AVAILABLE IDs SAMPLE:")
+    print(customers["customerID"].head())
+
     try:
-        customer = customers[customers["customerID"] == customer_id].iloc[0]
+        customer = customers[
+            customers["customerID"].str.strip() == str(customer_id).strip()
+        ]
+
+        print("MATCH FOUND:", customer)
+
+        customer = customer.iloc[0]
 
         # ✅ Contract Encoding
         contract_map = {
@@ -55,7 +66,19 @@ def predict(customer_id: str):
         ]
 
         # ✅ Prediction
-        prediction = model.predict([features])[0]
+        # prediction = model.predict([features])[0]
+        import pandas as pd
+
+        input_df = pd.DataFrame([{
+            "tickets_7d": customer["tickets_last_30_days"] // 3,
+            "tickets_30d": customer["tickets_last_30_days"],
+            "tickets_90d": customer["tickets_last_30_days"] * 2,
+            "complaint_flag": customer["complaint_flag"],
+            "charge_increase": customer["charge_increase"],
+            "contract_encoded": 0 if customer["Contract"] == "Month-to-month" else 1
+        }])
+
+        prediction = model.predict(input_df)[0]
         risk = "HIGH" if prediction == 1 else "LOW"
 
         logger.info(
